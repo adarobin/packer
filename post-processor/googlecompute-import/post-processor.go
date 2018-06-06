@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -27,6 +26,7 @@ type Config struct {
 	common.PackerConfig `mapstructure:",squash"`
 
 	Bucket            string            `mapstructure:"bucket"`
+	GCSObjectName     string            `mapstructure:"gcs_object_name"`
 	ImageDescription  string            `mapstructure:"image_description"`
 	ImageFamily       string            `mapstructure:"image_family"`
 	ImageLabels       map[string]string `mapstructure:"image_labels"`
@@ -47,12 +47,28 @@ func (p *PostProcessor) Configure(raws ...interface{}) error {
 	err := config.Decode(&p.config, &config.DecodeOpts{
 		Interpolate:        true,
 		InterpolateContext: &p.config.ctx,
+		InterpolateFilter: &interpolate.RenderFilter{
+			Exclude: []string{
+				"gcs_object_name",
+			},
+		},
 	}, raws...)
 	if err != nil {
 		return err
 	}
 
+	// Set defaults
+	if p.config.GCSObjectName == "" {
+		p.config.GCSObjectName = "packer-import-{{timestamp}}.tar.gz"
+	}
+
 	errs := new(packer.MultiError)
+
+	// Check and render gcs_object_name
+	if err = interpolate.Validate(p.config.GCSObjectName, &p.config.ctx); err != nil {
+		errs = packer.MultiErrorAppend(
+			errs, fmt.Errorf("Error parsing gcs_object_name template: %s", err))
+	}
 
 	templates := map[string]*string{
 		"bucket":       &p.config.Bucket,
@@ -84,7 +100,7 @@ func (p *PostProcessor) PostProcess(ui packer.Ui, artifact packer.Artifact) (pac
 		return nil, false, err
 	}
 
-	rawImageGcsPath, err := UploadToBucket(p.config.AccountFile, ui, artifact, p.config.Bucket)
+	rawImageGcsPath, err := UploadToBucket(p.config.AccountFile, ui, artifact, p.config.Bucket, p.config.GCSObjectName)
 	if err != nil {
 		return nil, p.config.KeepOriginalImage, err
 	}
@@ -97,7 +113,7 @@ func (p *PostProcessor) PostProcess(ui packer.Ui, artifact packer.Artifact) (pac
 	return gceImageArtifact, p.config.KeepOriginalImage, nil
 }
 
-func UploadToBucket(accountFile string, ui packer.Ui, artifact packer.Artifact, bucket string) (string, error) {
+func UploadToBucket(accountFile string, ui packer.Ui, artifact packer.Artifact, bucket string, gcsObjectName string) (string, error) {
 	var client *http.Client
 	var account googlecompute.AccountFile
 
@@ -141,13 +157,13 @@ func UploadToBucket(accountFile string, ui packer.Ui, artifact packer.Artifact, 
 	}
 
 	ui.Say(fmt.Sprintf("Uploading file %v to GCS bucket %v...", source, bucket))
-	storageObject, err := service.Objects.Insert(bucket, &storage.Object{Name: filepath.Base(source)}).Media(artifactFile).Do()
+	storageObject, err := service.Objects.Insert(bucket, &storage.Object{Name: gcsObjectName}).Media(artifactFile).Do()
 	if err != nil {
 		ui.Say(fmt.Sprintf("Failed to upload: %v", storageObject))
 		return "", err
 	}
 
-	return "https://storage.googleapis.com/" + bucket + "/" + filepath.Base(source), nil
+	return "https://storage.googleapis.com/" + bucket + "/" + gcsObjectName, nil
 }
 
 func CreateGceImage(accountFile string, ui packer.Ui, project string, rawImageURL string, imageName string, imageDescription string, imageFamily string, imageLabels map[string]string) (packer.Artifact, error) {
