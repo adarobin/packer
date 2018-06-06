@@ -81,7 +81,7 @@ func (p *PostProcessor) PostProcess(ui packer.Ui, artifact packer.Artifact) (pac
 		err := fmt.Errorf(
 			"incompatible artifact type: %s\nCan only import from Compress post-processor artifacts",
 			artifact.BuilderId())
-		return nil, p.config.KeepOriginalImage, err
+		return nil, false, err
 	}
 
 	rawImageGcsPath, err := UploadToBucket(p.config.AccountFile, ui, artifact, p.config.Bucket)
