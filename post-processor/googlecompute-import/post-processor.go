@@ -91,13 +91,20 @@ func (p *PostProcessor) Configure(raws ...interface{}) error {
 }
 
 func (p *PostProcessor) PostProcess(ui packer.Ui, artifact packer.Artifact) (packer.Artifact, bool, error) {
+	var err error
+
 	ui.Say("Starting googlecompute-import...")
 
 	if artifact.BuilderId() != compress.BuilderId {
-		err := fmt.Errorf(
+		err = fmt.Errorf(
 			"incompatible artifact type: %s\nCan only import from Compress post-processor artifacts",
 			artifact.BuilderId())
 		return nil, false, err
+	}
+
+	p.config.GCSObjectName, err = interpolate.Render(p.config.GCSObjectName, &p.config.ctx)
+	if err != nil {
+		return nil, false, fmt.Errorf("Error rendering gcs_object_name template: %s", err)
 	}
 
 	rawImageGcsPath, err := UploadToBucket(p.config.AccountFile, ui, artifact, p.config.Bucket, p.config.GCSObjectName)
