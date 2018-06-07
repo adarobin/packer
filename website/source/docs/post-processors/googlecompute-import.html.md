@@ -15,6 +15,8 @@ Type: `googlecompute-import`
 The Google Compute Image Import post-processor takes a compressed raw disk
 image and imports it to a GCE image available to Google Compute Engine.
 
+~&gt; This post-processor is for advanced users. Please ensure you read the [GCE import documentation](https://cloud.google.com/compute/docs/images/import-existing-image) before using this post-processor.
+
 ## How Does it Work?
 
 The import process operates by uploading a temporary copy of the compressed raw disk image

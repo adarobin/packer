@@ -93,8 +93,6 @@ func (p *PostProcessor) Configure(raws ...interface{}) error {
 func (p *PostProcessor) PostProcess(ui packer.Ui, artifact packer.Artifact) (packer.Artifact, bool, error) {
 	var err error
 
-	ui.Say("Starting googlecompute-import...")
-
 	if artifact.BuilderId() != compress.BuilderId {
 		err = fmt.Errorf(
 			"incompatible artifact type: %s\nCan only import from Compress post-processor artifacts",
@@ -163,7 +161,7 @@ func UploadToBucket(accountFile string, ui packer.Ui, artifact packer.Artifact, 
 		return "", err
 	}
 
-	ui.Say(fmt.Sprintf("Uploading file %v to GCS bucket %v...", source, bucket))
+	ui.Say(fmt.Sprintf("Uploading file %v to GCS bucket %v/%v...", source, bucket, gcsObjectName))
 	storageObject, err := service.Objects.Insert(bucket, &storage.Object{Name: gcsObjectName}).Media(artifactFile).Do()
 	if err != nil {
 		ui.Say(fmt.Sprintf("Failed to upload: %v", storageObject))
@@ -206,7 +204,7 @@ func CreateGceImage(accountFile string, ui packer.Ui, project string, rawImageUR
 		SourceType:  "RAW",
 	}
 
-	ui.Say("Creating image...")
+	ui.Say(fmt.Sprintf("Creating image %v...", imageName))
 	op, err := service.Images.Insert(project, gceImage).Do()
 	if err != nil {
 		ui.Say("Error creating GCE image")
