@@ -42,7 +42,7 @@ for details.
 
 ### Optional
 
--   `gcs_object_name` (string) - Tne name of the GCS object in `bucket` where the RAW disk image will be copied for import. Defaults to "packer-import-{{timestamp}}.tar.gz".
+-   `gcs_object_name` (string) - The name of the GCS object in `bucket` where the RAW disk image will be copied for import. Defaults to "packer-import-{{timestamp}}.tar.gz".
 
 -   `image_description` (string) - The description of the resulting image.
 
