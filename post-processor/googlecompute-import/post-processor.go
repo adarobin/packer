@@ -204,14 +204,14 @@ func CreateGceImage(accountFile string, ui packer.Ui, project string, rawImageUR
 		SourceType:  "RAW",
 	}
 
-	ui.Say(fmt.Sprintf("Creating image %v...", imageName))
+	ui.Say(fmt.Sprintf("Creating GCE image %v...", imageName))
 	op, err := service.Images.Insert(project, gceImage).Do()
 	if err != nil {
 		ui.Say("Error creating GCE image")
 		return nil, err
 	}
 
-	ui.Say("Waiting for creation operation to complete...")
+	ui.Say("Waiting for GCE image creation operation to complete...")
 	for op.Status != "DONE" {
 		op, err = service.GlobalOperations.Get(project, op.Name).Do()
 		if err != nil {

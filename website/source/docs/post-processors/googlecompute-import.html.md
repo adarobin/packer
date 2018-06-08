@@ -52,6 +52,8 @@ for details.
 
 -   `image_labels` (object of key/value strings) - Key/value pair labels to apply to the created image.
 
+-   `keep_input_artifact` (boolean) - if true, do not delete the compressed RAW disk image. Defaults to false.
+
 
 ## Basic Example
 
