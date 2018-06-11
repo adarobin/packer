@@ -221,5 +221,7 @@ func CreateGceImage(accountFile string, ui packer.Ui, project string, rawImageUR
 		time.Sleep(5 * time.Second)
 	}
 
+	// TODO: the above two error checks do not catch a failed image creation
+
 	return &Artifact{paths: []string{op.TargetLink}}, nil
 }
