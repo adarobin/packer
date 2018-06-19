@@ -221,7 +221,15 @@ func CreateGceImage(accountFile string, ui packer.Ui, project string, rawImageUR
 		time.Sleep(5 * time.Second)
 	}
 
-	// TODO: the above two error checks do not catch a failed image creation
+	// fail if image creation operation has an error
+	if op.Error != nil {
+		var imageError string
+		for _, error := range op.Error.Errors {
+			imageError += error.Message
+		}
+		err = fmt.Errorf("failed to create GCE image %s: %s", imageName, imageError)
+		return nil, err
+	}
 
 	return &Artifact{paths: []string{op.TargetLink}}, nil
 }
